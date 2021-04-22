@@ -1,3 +1,3 @@
-provider "scaffolding" {
+provider "vaultoperator" {
   # example configuration here
 }
