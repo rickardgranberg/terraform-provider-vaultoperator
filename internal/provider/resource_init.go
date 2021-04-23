@@ -61,14 +61,14 @@ func resourceInit() *schema.Resource {
 			argRootToken: {
 				Description: "The Vault Root Token.",
 				Type:        schema.TypeString,
-				Optional:    true,
 				Computed:    true,
+				Sensitive:   true,
 			},
 			argKeys: {
 				Description: "The unseal keys.",
 				Type:        schema.TypeList,
-				Optional:    true,
 				Computed:    true,
+				Sensitive:   true,
 				Elem: &schema.Schema{
 					Type: schema.TypeString,
 				},
@@ -76,8 +76,8 @@ func resourceInit() *schema.Resource {
 			argKeysBase64: {
 				Description: "The unseal keys, base64 encoded.",
 				Type:        schema.TypeList,
-				Optional:    true,
 				Computed:    true,
+				Sensitive:   true,
 				Elem: &schema.Schema{
 					Type: schema.TypeString,
 				},
