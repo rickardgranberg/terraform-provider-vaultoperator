@@ -40,12 +40,18 @@ func TestProvider_configure_url(t *testing.T) {
 }
 func TestProvider_configure_url_env(t *testing.T) {
 	ctx := context.TODO()
+	addr, exists := os.LookupEnv(envVaultAddr)
 	resetEnv := func() {
-		os.Unsetenv("VAULT_ADDR")
+
+		if exists {
+			os.Setenv(envVaultAddr, addr)
+		} else {
+			os.Unsetenv(envVaultAddr)
+		}
 	}
 	defer resetEnv()
 
-	os.Setenv("VAULT_ADDR", "http://localhost:8200")
+	os.Setenv(envVaultAddr, "http://localhost:8200")
 
 	rc := terraform.NewResourceConfigRaw(map[string]interface{}{})
 	p := New("dev")()
@@ -59,4 +65,7 @@ func testAccPreCheck(t *testing.T) {
 	// You can add code here to run prior to any test case execution, for example assertions
 	// about the appropriate environment variables being set are common to see in a pre-check
 	// function.
+	if v := os.Getenv(envVaultAddr); v == "" {
+		t.Fatalf("%s must be set for acceptance tests", envVaultAddr)
+	}
 }

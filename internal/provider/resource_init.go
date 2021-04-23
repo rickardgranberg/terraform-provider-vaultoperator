@@ -14,11 +14,14 @@ import (
 )
 
 const (
-	argSecretShares    = "secret_shares"
-	argSecretThreshold = "secret_threshold"
-	argRootToken       = "root_token"
-	argKeys            = "keys"
-	argKeysBase64      = "keys_base64"
+	argSecretShares      = "secret_shares"
+	argSecretThreshold   = "secret_threshold"
+	argStoredShares      = "stored_shares"
+	argRecoveryShares    = "recovery_shares"
+	argRecoveryThreshold = "recovery_threshold"
+	argRootToken         = "root_token"
+	argKeys              = "keys"
+	argKeysBase64        = "keys_base64"
 )
 
 func resourceInit() *schema.Resource {
@@ -44,6 +47,16 @@ func resourceInit() *schema.Resource {
 				Description: "Specifies the number of shares required to reconstruct the master key.",
 				Type:        schema.TypeInt,
 				Required:    true,
+			},
+			argRecoveryShares: {
+				Description: "Specifies the number of shares to split the recovery key into.",
+				Type:        schema.TypeInt,
+				Optional:    true,
+			},
+			argRecoveryThreshold: {
+				Description: "Specifies the number of shares required to reconstruct the recovery key.",
+				Type:        schema.TypeInt,
+				Optional:    true,
 			},
 			argRootToken: {
 				Description: "The Vault Root Token.",
@@ -76,11 +89,27 @@ func resourceInit() *schema.Resource {
 func resourceInitCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	// use the meta value to retrieve your client from the provider configure method
 	client := meta.(*apiClient)
+	secretShares := d.Get(argSecretShares).(int)
+	secretThreshold := d.Get(argSecretThreshold).(int)
+	recoveryShares := d.Get(argRecoveryShares).(int)
+	recoveryThreshold := d.Get(argRecoveryThreshold).(int)
+
+	if recoveryShares == 0 {
+		recoveryShares = secretShares
+	}
+
+	if recoveryThreshold == 0 {
+		recoveryThreshold = secretThreshold
+	}
 
 	req := api.InitRequest{
-		SecretShares:    d.Get(argSecretShares).(int),
-		SecretThreshold: d.Get(argSecretThreshold).(int),
+		SecretShares:      secretShares,
+		SecretThreshold:   secretThreshold,
+		RecoveryShares:    recoveryShares,
+		RecoveryThreshold: recoveryThreshold,
 	}
+
+	logDebug("request: %v", req)
 
 	res, err := client.client.Sys().Init(&req)
 
@@ -88,6 +117,8 @@ func resourceInitCreate(ctx context.Context, d *schema.ResourceData, meta interf
 		logError("failed to initialize Vault: %v", err)
 		return diag.FromErr(err)
 	}
+
+	logDebug("response: %v", res)
 
 	updateState(d, client.client.Address(), res)
 
@@ -98,21 +129,21 @@ func resourceInitRead(ctx context.Context, d *schema.ResourceData, meta interfac
 	// use the meta value to retrieve your client from the provider configure method
 	// client := meta.(*apiClient)
 
-	return diag.Errorf("not implemented")
+	return diag.Diagnostics{}
 }
 
 func resourceInitUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	// use the meta value to retrieve your client from the provider configure method
 	// client := meta.(*apiClient)
 
-	return diag.Errorf("not implemented")
+	return diag.Diagnostics{}
 }
 
 func resourceInitDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	// use the meta value to retrieve your client from the provider configure method
 	// client := meta.(*apiClient)
 
-	return diag.Errorf("not implemented")
+	return diag.Diagnostics{}
 }
 
 func resourceInitImporter(c context.Context, d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {

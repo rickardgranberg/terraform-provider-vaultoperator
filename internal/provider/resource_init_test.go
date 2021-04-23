@@ -27,8 +27,8 @@ func TestAccResourceInit(t *testing.T) {
 
 const testAccResourceInit = `
 provider "vaultoperator" {
-	vault_url = "http://localhost:8200"
 }
+
 resource "vaultoperator_init" "foo" {
 	secret_shares    = 5
 	secret_threshold = 3

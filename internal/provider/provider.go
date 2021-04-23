@@ -11,9 +11,10 @@ import (
 )
 
 const (
-	provider    = "vaultoperator"
-	resInit     = provider + "_init"
-	argVaultUrl = "vault_url"
+	envVaultAddr = "VAULT_ADDR"
+	provider     = "vaultoperator"
+	resInit      = provider + "_init"
+	argVaultUrl  = "vault_url"
 )
 
 func init() {
@@ -59,7 +60,7 @@ func providerSchema() map[string]*schema.Schema {
 	return map[string]*schema.Schema{
 		argVaultUrl: {
 			Type:        schema.TypeString,
-			Required:    true,
+			Optional:    true,
 			Description: "Vault instance URL",
 		},
 	}
@@ -68,14 +69,16 @@ func providerSchema() map[string]*schema.Schema {
 func configure(version string, p *schema.Provider) func(context.Context, *schema.ResourceData) (interface{}, diag.Diagnostics) {
 	return func(ctx context.Context, d *schema.ResourceData) (interface{}, diag.Diagnostics) {
 		a := &apiClient{}
-		a.url = os.Getenv("VAULT_ADDR")
+		a.url = os.Getenv(envVaultAddr)
 
-		if u, ok := d.GetOk(argVaultUrl); ok {
-			a.url = u.(string)
+		u := d.Get(argVaultUrl).(string)
+
+		if u != "" {
+			a.url = u
 		}
 
 		if a.url == "" {
-			return nil, diag.Errorf("%s is required", argVaultUrl)
+			return nil, diag.Errorf("argument '%s' is required, or set VAULT_ADDR environment variable", argVaultUrl)
 		}
 
 		c, err := api.NewClient(&api.Config{
@@ -95,4 +98,12 @@ func configure(version string, p *schema.Provider) func(context.Context, *schema
 
 func logError(fmt string, v ...interface{}) {
 	log.Printf("[ERROR] "+fmt, v)
+}
+
+func logInfo(fmt string, v ...interface{}) {
+	log.Printf("[INFO] "+fmt, v)
+}
+
+func logDebug(fmt string, v ...interface{}) {
+	log.Printf("[DEBUG] "+fmt, v)
 }

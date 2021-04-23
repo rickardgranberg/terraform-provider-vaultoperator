@@ -14,9 +14,13 @@
 	},
 	"runArgs": [
 		"--cap-add=SYS_PTRACE",
+		"--cap-add=IPC_LOCK",
 		"--security-opt",
 		"seccomp=unconfined"
 	],
+	"remoteEnv": {
+		"VAULT_ADDR": "http://localhost:8200"
+	},
 	// Set *default* container specific settings.json values on container create.
 	"settings": {
 		"terminal.integrated.shell.linux": "/bin/bash",
