@@ -1,0 +1,40 @@
+---
+page_title: "Resource: vaultoperator_init"
+subcategory: ""
+description: |-
+  Resource for vault operator init
+---
+
+# vaultoperator_init (Resource)
+
+Resource for vault operator init
+
+## Example Usage
+
+{{tffile "examples/resources/vaultoperator_init/resource.tf"}}
+
+{{ .SchemaMarkdown | trimspace }}
+
+## Import
+
+Import is supported from a json file with the Vault API schema:
+
+```json
+{
+    "keys": [
+        "...",
+        ...
+    ],
+    "keys_base64": [
+        "...",
+        ...
+    ],
+    "root_token": "..."
+}
+```
+
+Then run:
+
+```bash
+terraform import vaultoperator_init.example file://vaultinit.json
+```
