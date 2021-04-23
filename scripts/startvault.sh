@@ -6,4 +6,4 @@ rm -rf /tmp/vault
 
 DIRECTORY=`dirname $0`
 
-vault server -config ${DIRECTORY}/vault.hcl
+vault server -config ${DIRECTORY}/vault.hcl &
