@@ -58,7 +58,7 @@ jobs:
     - name: Set up Vault
       uses: innovationnorway/setup-vault@v1
       with:
-      version: '~1.4'
+        version: '~1.4'
     - name: Set up Go
       uses: actions/setup-go@v2.1.3
       with:
