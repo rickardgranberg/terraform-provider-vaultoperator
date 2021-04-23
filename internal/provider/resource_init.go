@@ -66,7 +66,7 @@ func resourceInit() *schema.Resource {
 			},
 			argKeys: {
 				Description: "The unseal keys.",
-				Type:        schema.TypeList,
+				Type:        schema.TypeSet,
 				Computed:    true,
 				Sensitive:   true,
 				Elem: &schema.Schema{
@@ -75,7 +75,7 @@ func resourceInit() *schema.Resource {
 			},
 			argKeysBase64: {
 				Description: "The unseal keys, base64 encoded.",
-				Type:        schema.TypeList,
+				Type:        schema.TypeSet,
 				Computed:    true,
 				Sensitive:   true,
 				Elem: &schema.Schema{
@@ -120,7 +120,10 @@ func resourceInitCreate(ctx context.Context, d *schema.ResourceData, meta interf
 
 	logDebug("response: %v", res)
 
-	updateState(d, client.client.Address(), res)
+	if err := updateState(d, client.client.Address(), res); err != nil {
+		logError("failed to update state: %v", err)
+		return diag.FromErr(err)
+	}
 
 	return diag.Diagnostics{}
 }
@@ -176,13 +179,37 @@ func resourceInitImporter(c context.Context, d *schema.ResourceData, meta interf
 		return nil, err
 	}
 
-	updateState(d, client.client.Address(), &initResponse)
+	if err := updateState(d, client.client.Address(), &initResponse); err != nil {
+		logError("failed to update state: %v", err)
+		return nil, err
+	}
+
 	return []*schema.ResourceData{d}, nil
 }
 
-func updateState(d *schema.ResourceData, id string, res *api.InitResponse) {
+func updateState(d *schema.ResourceData, id string, res *api.InitResponse) error {
 	d.SetId(id)
-	d.Set(argRootToken, res.RootToken)
-	d.Set(argKeys, res.Keys)
-	d.Set(argKeysBase64, res.KeysB64)
+	if err := d.Set(argRootToken, res.RootToken); err != nil {
+		return err
+	}
+	if err := d.Set(argKeys, res.Keys); err != nil {
+		return err
+	}
+	if err := d.Set(argKeysBase64, res.KeysB64); err != nil {
+		return err
+	}
+	return nil
+	//d.Set(argKeys, flattenKeys(res.Keys))
+	//d.Set(argKeysBase64, flattenKeys(res.KeysB64))
 }
+
+// func flattenKeys(keys []string) []interface{} {
+
+// 	result := make([]interface{}, len(keys))
+
+// 	for i, key := range keys {
+// 		result[i] = key
+// 	}
+
+// 	return result
+// }
