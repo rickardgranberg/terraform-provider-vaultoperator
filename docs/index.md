@@ -16,7 +16,7 @@ This Provider gives access to the `vault operator` operations, although currentl
 ```terraform
 provider "vaultoperator" {
   # example configuration here
-  vault_url = "http:/vault:8200"
+  vault_url = "http://vault:8200"
 }
 ```
 

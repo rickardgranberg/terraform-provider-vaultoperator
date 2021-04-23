@@ -34,8 +34,8 @@ resource "vaultoperator_init" "example" {
 
 ### Read-Only
 
-- **keys** (List of String, Sensitive) The unseal keys.
-- **keys_base64** (List of String, Sensitive) The unseal keys, base64 encoded.
+- **keys** (Set of String, Sensitive) The unseal keys.
+- **keys_base64** (Set of String, Sensitive) The unseal keys, base64 encoded.
 - **root_token** (String, Sensitive) The Vault Root Token.
 
 ## Import
