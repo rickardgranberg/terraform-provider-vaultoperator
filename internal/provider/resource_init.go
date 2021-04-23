@@ -199,17 +199,4 @@ func updateState(d *schema.ResourceData, id string, res *api.InitResponse) error
 		return err
 	}
 	return nil
-	//d.Set(argKeys, flattenKeys(res.Keys))
-	//d.Set(argKeysBase64, flattenKeys(res.KeysB64))
 }
-
-// func flattenKeys(keys []string) []interface{} {
-
-// 	result := make([]interface{}, len(keys))
-
-// 	for i, key := range keys {
-// 		result[i] = key
-// 	}
-
-// 	return result
-// }
