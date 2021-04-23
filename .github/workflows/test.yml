@@ -53,8 +53,19 @@ jobs:
         terraform:
           - '0.14.7'
           - '0.15.0'
-    steps:
+    services:
+      vault:
+        image: vault:latest
+        options: >-
+          server
+          --config=/tmp/vault.hcl
+        volumes:
+          - ${{ github.workspace }}/scripts:/tmp
+        ports:
+          - 8200:8200
 
+    steps:
+    
     - name: Set up Go
       uses: actions/setup-go@v2.1.3
       with:
@@ -73,6 +84,7 @@ jobs:
       env:
         TF_ACC: "1"
         TF_ACC_TERRAFORM_VERSION: ${{ matrix.terraform }}
+        VAULT_ADDR: "http://localhost:8200"
 
         # Set whatever additional acceptance test env vars here. You can
         # optionally use data from your repository secrets using the

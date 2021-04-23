@@ -33,7 +33,8 @@
 	"extensions": [
 		"golang.Go",
 		"hashicorp.terraform",
-		"davidanson.vscode-markdownlint"
+		"davidanson.vscode-markdownlint",
+		"cschleiden.vscode-github-actions"
 	],
 	// Use 'forwardPorts' to make a list of ports inside the container available locally.
 	// "forwardPorts": [],
