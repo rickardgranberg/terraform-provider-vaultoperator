@@ -58,9 +58,9 @@ jobs:
         image: vault:latest
         options: >-
           server
-          --config=/tmp/vault.hcl
+          --config=/tmp/scripts/vault.hcl
         volumes:
-          - ${{ github.workspace }}/scripts:/tmp
+          - ${{ github.workspace }}/scripts:/tmp/scripts
         ports:
           - 8200:8200
 

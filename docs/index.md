@@ -8,6 +8,9 @@ description: |-
 
 # vaultoperator Provider
 
+This Provider gives access to the `vault operator` operations, although currently only `vault operator init` is implemented.
+
+**NOTE! This will put the root token and unseal/recovery keys into your state so use with caution!**
 
 
 ## Example Usage
