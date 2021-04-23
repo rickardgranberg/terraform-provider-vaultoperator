@@ -53,17 +53,12 @@ jobs:
         terraform:
           - '0.14.7'
           - '0.15.0'
-    services:
-      vault:
-        image: vault:latest
-        args: server --config=/tmp/scripts/vault.hcl
-        volumes:
-          - ${{ github.workspace }}/scripts:/tmp/scripts
-        ports:
-          - 8200:8200
-
     steps:
-    
+
+    - name: Set up Vault
+      uses: innovationnorway/setup-vault@v1
+      with:
+      version: '~1.4'
     - name: Set up Go
       uses: actions/setup-go@v2.1.3
       with:
@@ -90,4 +85,6 @@ jobs:
         # SOME_VAR: ${{ secrets.SOME_VAR }}
 
       run: |
+        ./scripts/runvault.sh &
         go test -v -cover ./internal/provider/
+        ./scripts/stopvault.sh
