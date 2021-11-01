@@ -2,6 +2,7 @@ package provider
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"os"
 
@@ -11,10 +12,12 @@ import (
 )
 
 const (
-	envVaultAddr = "VAULT_ADDR"
-	provider     = "vaultoperator"
-	resInit      = provider + "_init"
-	argVaultUrl  = "vault_url"
+	envVaultAddr      = "VAULT_ADDR"
+	provider          = "vaultoperator"
+	resInit           = provider + "_init"
+	argVaultUrl       = "vault_url"
+	argVaultAddr      = "vault_addr"
+	argRequestHeaders = "request_headers"
 )
 
 func init() {
@@ -40,6 +43,9 @@ func New(version string) func() *schema.Provider {
 			ResourcesMap: map[string]*schema.Resource{
 				resInit: resourceInit(),
 			},
+			DataSourcesMap: map[string]*schema.Resource{
+				resInit: providerDatasource(),
+			},
 		}
 
 		p.ConfigureContextFunc = configure(version, p)
@@ -62,6 +68,19 @@ func providerSchema() map[string]*schema.Schema {
 			Type:        schema.TypeString,
 			Optional:    true,
 			Description: "Vault instance URL",
+			Deprecated:  fmt.Sprintf("%q is deprecated, please use %q instead", argVaultUrl, argVaultAddr),
+		},
+		argVaultAddr: {
+			Type:        schema.TypeString,
+			Optional:    true,
+			Description: "Vault instance URL",
+		},
+		argRequestHeaders: {
+			Type:     schema.TypeMap,
+			Optional: true,
+			Elem: &schema.Schema{
+				Type: schema.TypeString,
+			},
 		},
 	}
 }
@@ -69,28 +88,25 @@ func providerSchema() map[string]*schema.Schema {
 func configure(version string, p *schema.Provider) func(context.Context, *schema.ResourceData) (interface{}, diag.Diagnostics) {
 	return func(ctx context.Context, d *schema.ResourceData) (interface{}, diag.Diagnostics) {
 		a := &apiClient{}
-		a.url = os.Getenv(envVaultAddr)
 
-		u := d.Get(argVaultUrl).(string)
-
-		if u != "" {
+		if u := d.Get(argVaultAddr).(string); u != "" {
 			a.url = u
+		} else if u := d.Get(argVaultUrl).(string); u != "" {
+			a.url = u
+		} else {
+			a.url = os.Getenv(envVaultAddr)
 		}
 
 		if a.url == "" {
 			return nil, diag.Errorf("argument '%s' is required, or set VAULT_ADDR environment variable", argVaultUrl)
 		}
 
-		c, err := api.NewClient(&api.Config{
-			Address: a.url,
-		})
-
-		if err != nil {
+		if c, err := api.NewClient(&api.Config{Address: a.url}); err != nil {
 			logError("failed to create Vault API client: %v", err)
 			return nil, diag.FromErr(err)
+		} else {
+			a.client = c
 		}
-
-		a.client = c
 
 		return a, nil
 	}

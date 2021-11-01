@@ -167,7 +167,6 @@ func resourceInitImporter(c context.Context, d *schema.ResourceData, meta interf
 	}
 
 	fc, err := ioutil.ReadFile(filepath.Join(u.Host, u.Path))
-
 	if err != nil {
 		logError("failed reading file %v", err)
 		return nil, err
@@ -189,6 +188,7 @@ func resourceInitImporter(c context.Context, d *schema.ResourceData, meta interf
 
 func updateState(d *schema.ResourceData, id string, res *api.InitResponse) error {
 	d.SetId(id)
+
 	if err := d.Set(argRootToken, res.RootToken); err != nil {
 		return err
 	}
@@ -198,5 +198,6 @@ func updateState(d *schema.ResourceData, id string, res *api.InitResponse) error
 	if err := d.Set(argKeysBase64, res.KeysB64); err != nil {
 		return err
 	}
+
 	return nil
 }
