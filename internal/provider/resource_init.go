@@ -14,14 +14,16 @@ import (
 )
 
 const (
-	argSecretShares      = "secret_shares"
-	argSecretThreshold   = "secret_threshold"
-	argStoredShares      = "stored_shares"
-	argRecoveryShares    = "recovery_shares"
-	argRecoveryThreshold = "recovery_threshold"
-	argRootToken         = "root_token"
-	argKeys              = "keys"
-	argKeysBase64        = "keys_base64"
+	argSecretShares       = "secret_shares"
+	argSecretThreshold    = "secret_threshold"
+	argStoredShares       = "stored_shares"
+	argRecoveryShares     = "recovery_shares"
+	argRecoveryThreshold  = "recovery_threshold"
+	argRecoveryKeys       = "recovery_keys"
+	argRecoveryKeysBase64 = "recovery_keys_base64"
+	argRootToken          = "root_token"
+	argKeys               = "keys"
+	argKeysBase64         = "keys_base64"
 )
 
 func resourceInit() *schema.Resource {
@@ -75,6 +77,24 @@ func resourceInit() *schema.Resource {
 			},
 			argKeysBase64: {
 				Description: "The unseal keys, base64 encoded.",
+				Type:        schema.TypeSet,
+				Computed:    true,
+				Sensitive:   true,
+				Elem: &schema.Schema{
+					Type: schema.TypeString,
+				},
+			},
+			argRecoveryKeys: {
+				Description: "The recovery keys",
+				Type:        schema.TypeSet,
+				Computed:    true,
+				Sensitive:   true,
+				Elem: &schema.Schema{
+					Type: schema.TypeString,
+				},
+			},
+			argRecoveryKeysBase64: {
+				Description: "The recovery keys, base64 encoded.",
 				Type:        schema.TypeSet,
 				Computed:    true,
 				Sensitive:   true,
@@ -196,6 +216,12 @@ func updateState(d *schema.ResourceData, id string, res *api.InitResponse) error
 		return err
 	}
 	if err := d.Set(argKeysBase64, res.KeysB64); err != nil {
+		return err
+	}
+	if err := d.Set(argRecoveryKeys, res.RecoveryKeys); err != nil {
+		return err
+	}
+	if err := d.Set(argRecoveryKeysBase64, res.RecoveryKeysB64); err != nil {
 		return err
 	}
 
