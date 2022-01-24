@@ -36,6 +36,8 @@ resource "vaultoperator_init" "example" {
 
 - **keys** (Set of String, Sensitive) The unseal keys.
 - **keys_base64** (Set of String, Sensitive) The unseal keys, base64 encoded.
+- **recovery_keys** (Set of String, Sensitive) The recovery keys
+- **recovery_keys_base64** (Set of String, Sensitive) The recovery keys, base64 encoded.
 - **root_token** (String, Sensitive) The Vault Root Token.
 
 ## Import
@@ -46,11 +48,11 @@ Import is supported from a json file with the Vault API schema:
 {
     "keys": [
         "...",
-        ...
+        "..."
     ],
     "keys_base64": [
         "...",
-        ...
+        "..."
     ],
     "root_token": "..."
 }
