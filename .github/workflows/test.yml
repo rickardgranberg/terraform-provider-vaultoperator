@@ -26,7 +26,7 @@ jobs:
     - name: Set up Go
       uses: actions/setup-go@v2.1.3
       with:
-        go-version: '1.16'
+        go-version: '1.17'
       id: go
 
     - name: Check out code into the Go module directory
@@ -53,6 +53,7 @@ jobs:
         terraform:
           - '0.14.7'
           - '0.15.0'
+          - '1.0.5'
     steps:
 
     - name: Set up Vault
@@ -62,7 +63,7 @@ jobs:
     - name: Set up Go
       uses: actions/setup-go@v2.1.3
       with:
-        go-version: '1.16'
+        go-version: '1.17'
       id: go
 
     - name: Check out code into the Go module directory
