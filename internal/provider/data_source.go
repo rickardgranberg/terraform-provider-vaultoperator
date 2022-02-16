@@ -21,14 +21,14 @@ func providerDatasource() *schema.Resource {
 		Schema: map[string]*schema.Schema{
 			argInitialized: {
 				Description: "The current initialization state of Vault.",
-				Type: schema.TypeBool,
-				Computed: true,
+				Type:        schema.TypeBool,
+				Computed:    true,
 			},
 		},
 	}
 }
 
-func providerDatasourceRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func providerDatasourceRead(_ context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*apiClient)
 
 	d.SetId(client.url)

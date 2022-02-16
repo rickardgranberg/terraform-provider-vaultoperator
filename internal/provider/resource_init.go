@@ -4,13 +4,22 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"io/ioutil"
-	"net/url"
-	"path/filepath"
-
+	"fmt"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/vault/api"
+	"io/ioutil"
+	v1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
+	"k8s.io/client-go/tools/portforward"
+	"k8s.io/client-go/transport/spdy"
+	"net/http"
+	"net/url"
+	"os"
+	"os/signal"
+	"path/filepath"
+	"syscall"
 )
 
 const (
@@ -114,6 +123,116 @@ func resourceInitCreate(ctx context.Context, d *schema.ResourceData, meta interf
 	recoveryShares := d.Get(argRecoveryShares).(int)
 	recoveryThreshold := d.Get(argRecoveryThreshold).(int)
 
+	// stopCh control the port forwarding lifecycle. When it gets closed the
+	// port forward will terminate
+	stopCh := make(chan struct{}, 1)
+	// readyCh communicate when the port forward is ready to get traffic
+	readyCh := make(chan struct{})
+
+	if kubeConfig := client.kubeConn.kubeConfig; kubeConfig != nil {
+		kubeClientSet := client.kubeConn.kubeClient
+		nameSpace := client.kubeConn.nameSpace
+		serviceName := client.kubeConn.serviceName
+		localPort := client.kubeConn.localPort
+		remotePort := client.kubeConn.remotePort
+
+		errCh := make(chan error, 1)
+
+		// managing termination signal from the terminal. As you can see the stopCh
+		// gets closed to gracefully handle its termination.
+		sigs := make(chan os.Signal, 1)
+		signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
+		go func() {
+			<-sigs
+			logInfo("Stopping a forward process...")
+			close(stopCh)
+		}()
+
+		go func() {
+			svc, err := kubeClientSet.CoreV1().Services(nameSpace).Get(ctx, serviceName, metav1.GetOptions{})
+			if err != nil {
+				logDebug("failed to create Kubernetes client")
+				errCh <- err
+			}
+
+			selector := mapToSelectorStr(svc.Spec.Selector)
+			if selector == "" {
+				logDebug("failed to get service selector")
+				errCh <- err
+			}
+
+			pods, err := kubeClientSet.CoreV1().Pods(svc.Namespace).List(ctx, metav1.ListOptions{LabelSelector: selector})
+			if err != nil {
+				logDebug("failed to get a pod list")
+				errCh <- err
+			}
+
+			if len(pods.Items) == 0 {
+				logDebug("no Vault pods was found")
+				errCh <- err
+			}
+
+			livePod, err := getPodName(pods)
+			if err != nil {
+				logDebug("failed to get live Vault pod")
+				errCh <- err
+			}
+
+			serverURL, err := url.Parse(
+				fmt.Sprintf("%s/api/v1/namespaces/%s/pods/%s/portforward", kubeConfig.Host, nameSpace, livePod))
+			if err != nil {
+				logDebug("failed to construct server url")
+				errCh <- err
+			}
+
+			transport, upgrader, err := spdy.RoundTripperFor(kubeConfig)
+			if err != nil {
+				logDebug("failed to create a round tripper")
+				errCh <- err
+			}
+
+			dialer := spdy.NewDialer(upgrader, &http.Client{Transport: transport}, http.MethodPost, serverURL)
+
+			addresses := []string{"127.0.0.1"}
+			ports := []string{fmt.Sprintf("%s:%s", localPort, remotePort)}
+
+			pf, err := portforward.NewOnAddresses(
+				dialer,
+				addresses,
+				ports,
+				stopCh,
+				readyCh,
+				os.Stdout,
+				os.Stderr)
+			if err != nil {
+				logDebug("failed to create port-forward: %s:%s", localPort, remotePort)
+				errCh <- err
+			}
+
+			go pf.ForwardPorts()
+
+			<-readyCh
+
+			actualPorts, err := pf.GetPorts()
+			if err != nil {
+				logDebug("failed to get port-forward ports")
+				errCh <- err
+			}
+			if len(actualPorts) != 1 {
+				logDebug("cannot get forwarded ports: unexpected length %d", len(actualPorts))
+				errCh <- err
+			}
+		}()
+
+		select {
+		case <-readyCh:
+			logDebug("Port-forwarding is ready to handle traffic")
+			break
+		case err := <-errCh:
+			return diag.FromErr(err)
+		}
+	}
+
 	if recoveryShares == 0 {
 		recoveryShares = secretShares
 	}
@@ -144,6 +263,8 @@ func resourceInitCreate(ctx context.Context, d *schema.ResourceData, meta interf
 		logError("failed to update state: %v", err)
 		return diag.FromErr(err)
 	}
+
+	close(stopCh)
 
 	return diag.Diagnostics{}
 }
@@ -226,4 +347,29 @@ func updateState(d *schema.ResourceData, id string, res *api.InitResponse) error
 	}
 
 	return nil
+}
+
+func getPodName(pods *v1.PodList) (string, error) {
+
+	for _, pod := range pods.Items {
+		if pod.Status.Phase != v1.PodRunning {
+			continue
+		}
+
+		return pod.Name, nil
+	}
+
+	return "", fmt.Errorf("no live pods behind the service")
+}
+
+func mapToSelectorStr(msel map[string]string) string {
+	selector := ""
+	for k, v := range msel {
+		if selector != "" {
+			selector = selector + ","
+		}
+		selector = selector + fmt.Sprintf("%s=%s", k, v)
+	}
+
+	return selector
 }

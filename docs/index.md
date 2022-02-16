@@ -14,9 +14,25 @@ This Provider gives access to the `vault operator` operations, although currentl
 ## Example Usage
 
 ```terraform
+terraform {
+  required_providers {
+    vaultoperator = {
+      version = "0.2.0"
+      source  = "rickardgranberg/vaultoperator"
+    }
+  }
+}
+
 provider "vaultoperator" {
   # example configuration here
   vault_url = "http://vault:8200"
+  kube_config {
+    path       = "~/.kube/config"
+    namespace  = "vault"
+    service    = "vault"
+    localPort  = "8200"
+    remotePort = "8200"
+  }
 }
 ```
 
@@ -25,4 +41,18 @@ provider "vaultoperator" {
 
 ### Optional
 
-- **vault_url** (String) Vault instance URL
+- **kube_config** (Block List) (see [below for nested schema](#nestedblock--kube_config))
+- **request_headers** (Map of String)
+- **vault_addr** (String) Vault instance URL
+- **vault_url** (String, Deprecated) Vault instance URL
+
+<a id="nestedblock--kube_config"></a>
+### Nested Schema for `kube_config`
+
+Optional:
+
+- **local_port** (String) Local forward port
+- **namespace** (String) Kubernetes namespace where HC Vault is run
+- **path** (String) Full path to a Kubernetes config
+- **remote_port** (String) Remote service port to forward
+- **service** (String) Kubernetes service name of Vault

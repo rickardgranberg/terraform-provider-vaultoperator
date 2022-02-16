@@ -2,4 +2,4 @@
 
 set -e
 
-pkill --exact vault
+pkill -x vault
