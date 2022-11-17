@@ -81,7 +81,6 @@ jobs:
       env:
         TF_ACC: "1"
         TF_ACC_TERRAFORM_VERSION: ${{ matrix.terraform }}
-        VAULT_ADDR: "http://localhost:8200"
 
         # Set whatever additional acceptance test env vars here. You can
         # optionally use data from your repository secrets using the
@@ -89,6 +88,4 @@ jobs:
         # SOME_VAR: ${{ secrets.SOME_VAR }}
 
       run: |
-        ./scripts/startvault.sh
         go test -v -cover ./internal/provider/
-        ./scripts/stopvault.sh
