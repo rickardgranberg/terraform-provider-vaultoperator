@@ -20,6 +20,8 @@ resource "%[2]s" "test" {
 `, provider, resInit)
 
 func TestAccResourceInit(t *testing.T) {
+	startVault(t)
+
 	resource.UnitTest(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
 		ProviderFactories: providerFactories,
