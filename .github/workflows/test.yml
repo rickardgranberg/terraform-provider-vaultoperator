@@ -60,9 +60,9 @@ jobs:
     steps:
 
     - name: Set up Vault
-      uses: innovationnorway/setup-vault@v1
+      uses: eLco/setup-vault@v1
       with:
-        version: ${{ matrix.vault }}
+        vault_version: ${{ matrix.vault }}
     - name: Set up Go
       uses: actions/setup-go@v3
       with:
