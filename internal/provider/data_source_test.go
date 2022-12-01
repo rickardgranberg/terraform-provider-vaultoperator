@@ -17,6 +17,8 @@ data "%[2]s" "test" {
 `, provider, resInit)
 
 func TestAccDataSourceInit(t *testing.T) {
+	startVault(t)
+
 	resource.UnitTest(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
 		ProviderFactories: providerFactories,
@@ -24,7 +26,27 @@ func TestAccDataSourceInit(t *testing.T) {
 			{
 				Config: testAccDataSourceInit,
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttrSet(testAccDataSourceInitVar, argInitialized),
+					resource.TestCheckResourceAttr(testAccDataSourceInitVar, argInitialized, "false"),
+				),
+			},
+		},
+	})
+}
+
+func TestAccDataSourceInitComplete(t *testing.T) {
+	startVault(t)
+
+	resource.UnitTest(t, resource.TestCase{
+		PreCheck:          func() { testAccPreCheck(t) },
+		ProviderFactories: providerFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccResourceInit,
+			},
+			{
+				Config: testAccDataSourceInit,
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(testAccDataSourceInitVar, argInitialized, "true"),
 				),
 			},
 		},

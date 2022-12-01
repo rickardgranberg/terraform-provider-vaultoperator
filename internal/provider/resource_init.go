@@ -34,6 +34,9 @@ const (
 	argRootToken          = "root_token"
 	argKeys               = "keys"
 	argKeysBase64         = "keys_base64"
+	argPGPKeys            = "pgp_keys"
+	argRecoveryPGPKeys    = "recovery_pgp_keys"
+	argRootTokenPGPKey    = "root_token_pgp_key"
 )
 
 func resourceInit() *schema.Resource {
@@ -70,6 +73,27 @@ func resourceInit() *schema.Resource {
 				Type:        schema.TypeInt,
 				Optional:    true,
 			},
+			argPGPKeys: {
+				Description: "Specifies an array of PGP public keys used to encrypt the output unseal keys. Ordering is preserved. The keys must be base64-encoded from their original binary representation. The size of this array must be the same as secret_shares.",
+				Type:        schema.TypeList,
+				Optional:    true,
+				Elem: &schema.Schema{
+					Type: schema.TypeString,
+				},
+			},
+			argRecoveryPGPKeys: {
+				Description: "Specifies an array of PGP public keys used to encrypt the output recovery keys. Ordering is preserved. The keys must be base64-encoded from their original binary representation. The size of this array must be the same as recovery_shares. This is only available when using Auto Unseal.",
+				Type:        schema.TypeList,
+				Optional:    true,
+				Elem: &schema.Schema{
+					Type: schema.TypeString,
+				},
+			},
+			argRootTokenPGPKey: {
+				Description: "Specifies a PGP public key used to encrypt the initial root token. The key must be base64-encoded from its original binary representation.",
+				Type:        schema.TypeString,
+				Optional:    true,
+			},
 			argRootToken: {
 				Description: "The Vault Root Token.",
 				Type:        schema.TypeString,
@@ -78,7 +102,7 @@ func resourceInit() *schema.Resource {
 			},
 			argKeys: {
 				Description: "The unseal keys.",
-				Type:        schema.TypeSet,
+				Type:        schema.TypeList,
 				Computed:    true,
 				Sensitive:   true,
 				Elem: &schema.Schema{
@@ -87,7 +111,7 @@ func resourceInit() *schema.Resource {
 			},
 			argKeysBase64: {
 				Description: "The unseal keys, base64 encoded.",
-				Type:        schema.TypeSet,
+				Type:        schema.TypeList,
 				Computed:    true,
 				Sensitive:   true,
 				Elem: &schema.Schema{
@@ -96,7 +120,7 @@ func resourceInit() *schema.Resource {
 			},
 			argRecoveryKeys: {
 				Description: "The recovery keys",
-				Type:        schema.TypeSet,
+				Type:        schema.TypeList,
 				Computed:    true,
 				Sensitive:   true,
 				Elem: &schema.Schema{
@@ -105,7 +129,7 @@ func resourceInit() *schema.Resource {
 			},
 			argRecoveryKeysBase64: {
 				Description: "The recovery keys, base64 encoded.",
-				Type:        schema.TypeSet,
+				Type:        schema.TypeList,
 				Computed:    true,
 				Sensitive:   true,
 				Elem: &schema.Schema{
@@ -123,6 +147,19 @@ func resourceInitCreate(ctx context.Context, d *schema.ResourceData, meta interf
 	secretThreshold := d.Get(argSecretThreshold).(int)
 	recoveryShares := d.Get(argRecoveryShares).(int)
 	recoveryThreshold := d.Get(argRecoveryThreshold).(int)
+	pgpKeys := d.Get(argPGPKeys).([]interface{})
+	recoveryPGPKeys := d.Get(argRecoveryPGPKeys).([]interface{})
+	rootTokenPGPKey := d.Get(argRootTokenPGPKey).(string)
+
+	pgpKeysList := make([]string, len(pgpKeys))
+	for i, pgpKey := range pgpKeys {
+		pgpKeysList[i] = pgpKey.(string)
+	}
+
+	recoveryPGPKeysList := make([]string, len(recoveryPGPKeys))
+	for i, pgpKey := range recoveryPGPKeys {
+		recoveryPGPKeysList[i] = pgpKey.(string)
+	}
 
 	// stopCh control the port forwarding lifecycle. When it gets closed the
 	// port forward will terminate
@@ -239,6 +276,9 @@ func resourceInitCreate(ctx context.Context, d *schema.ResourceData, meta interf
 		SecretThreshold:   secretThreshold,
 		RecoveryShares:    recoveryShares,
 		RecoveryThreshold: recoveryThreshold,
+		PGPKeys:           pgpKeysList,
+		RecoveryPGPKeys:   recoveryPGPKeysList,
+		RootTokenPGPKey:   rootTokenPGPKey,
 	}
 
 	logDebug("request: %v", req)
