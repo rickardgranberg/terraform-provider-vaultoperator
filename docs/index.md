@@ -17,7 +17,7 @@ This Provider gives access to the `vault operator` operations, although currentl
 terraform {
   required_providers {
     vaultoperator = {
-      version = "0.2.0"
+      version = "0.1.8"
       source  = "rickardgranberg/vaultoperator"
     }
   }
