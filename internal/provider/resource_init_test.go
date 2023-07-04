@@ -1,13 +1,13 @@
 package provider
 
 import (
+	"encoding/base64"
 	"fmt"
 	"regexp"
 	"testing"
-	"encoding/base64"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/ProtonMail/gopenpgp/v2/crypto"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 )
 
 var testAccResourceInitVar = fmt.Sprintf("%[1]s.test", resInit)
