@@ -18,7 +18,7 @@ If you are using HTTPS with a self-signed or untrusted certificate, you can run 
 terraform {
   required_providers {
     vaultoperator = {
-      version = "0.1.8"
+      version = "0.2.0"
       source  = "rickardgranberg/vaultoperator"
     }
   }
@@ -33,6 +33,12 @@ provider "vaultoperator" {
     service    = "vault"
     localPort  = "8200"
     remotePort = "8200"
+    # optional exec:
+    exec {
+      api_version = "client.authentication.k8s.io/v1beta1"
+      args        = ["eks", "get-token", "--cluster-name", var.cluster_name]
+      command     = "aws"
+    }
   }
 }
 ```
@@ -42,18 +48,32 @@ provider "vaultoperator" {
 
 ### Optional
 
-- **kube_config** (Block List) (see [below for nested schema](#nestedblock--kube_config))
-- **request_headers** (Map of String)
-- **vault_addr** (String) Vault instance URL
-- **vault_url** (String, Deprecated) Vault instance URL
+- `kube_config` (Block List) (see [below for nested schema](#nestedblock--kube_config))
+- `request_headers` (Map of String)
+- `vault_addr` (String) Vault instance URL
+- `vault_url` (String, Deprecated) Vault instance URL
 
 <a id="nestedblock--kube_config"></a>
 ### Nested Schema for `kube_config`
 
 Optional:
 
-- **local_port** (String) Local forward port
-- **namespace** (String) Kubernetes namespace where HC Vault is run
-- **path** (String) Full path to a Kubernetes config
-- **remote_port** (String) Remote service port to forward
-- **service** (String) Kubernetes service name of Vault
+- `exec` (Block List, Max: 1) (see [below for nested schema](#nestedblock--kube_config--exec))
+- `local_port` (String) Local forward port
+- `namespace` (String) Kubernetes namespace where HC Vault is run
+- `path` (String) Full path to a Kubernetes config
+- `remote_port` (String) Remote service port to forward
+- `service` (String) Kubernetes service name of Vault
+
+<a id="nestedblock--kube_config--exec"></a>
+### Nested Schema for `kube_config.exec`
+
+Required:
+
+- `api_version` (String)
+- `command` (String)
+
+Optional:
+
+- `args` (List of String)
+- `env` (Map of String)

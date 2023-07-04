@@ -16,5 +16,11 @@ provider "vaultoperator" {
     service    = "vault"
     localPort  = "8200"
     remotePort = "8200"
+    # optional exec:
+    exec {
+      api_version = "client.authentication.k8s.io/v1beta1"
+      args        = ["eks", "get-token", "--cluster-name", var.cluster_name]
+      command     = "aws"
+    }
   }
 }
