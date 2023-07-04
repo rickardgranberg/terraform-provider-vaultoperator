@@ -7,8 +7,9 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/vault/api"
 	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/rest"
+	restclient "k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
+	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 	"log"
 	"os"
 	"strings"
@@ -69,7 +70,7 @@ type kubeConn struct {
 	serviceName string
 	localPort   string
 	remotePort  string
-	kubeConfig  *rest.Config
+	kubeConfig  *restclient.Config
 	kubeClient  *kubernetes.Clientset
 }
 
@@ -135,6 +136,34 @@ func providerSchema() map[string]*schema.Schema {
 						Description: "Remote service port to forward",
 						Default:     "8200",
 					},
+					"exec": {
+						Type:     schema.TypeList,
+						Optional: true,
+						MaxItems: 1,
+						Elem: &schema.Resource{
+							Schema: map[string]*schema.Schema{
+								"api_version": {
+									Type:     schema.TypeString,
+									Required: true,
+								},
+								"command": {
+									Type:     schema.TypeString,
+									Required: true,
+								},
+								"env": {
+									Type:     schema.TypeMap,
+									Optional: true,
+									Elem:     &schema.Schema{Type: schema.TypeString},
+								},
+								"args": {
+									Type:     schema.TypeList,
+									Optional: true,
+									Elem:     &schema.Schema{Type: schema.TypeString},
+								},
+							},
+						},
+						Description: "",
+					},
 				},
 			},
 		},
@@ -144,6 +173,8 @@ func providerSchema() map[string]*schema.Schema {
 func configure(version string, p *schema.Provider) func(context.Context, *schema.ResourceData) (interface{}, diag.Diagnostics) {
 	return func(ctx context.Context, d *schema.ResourceData) (interface{}, diag.Diagnostics) {
 		a := &apiClient{}
+		loader := &clientcmd.ClientConfigLoadingRules{}
+		overrides := &clientcmd.ConfigOverrides{}
 
 		if k := d.Get(argKubeConfig).([]interface{}); len(k) > 0 {
 			kubeConn := k[0].(map[string]interface{})
@@ -158,19 +189,7 @@ func configure(version string, p *schema.Provider) func(context.Context, *schema
 				path = strings.Replace(path, "~", homeDir, -1)
 			}
 
-			// Create Kubernetes *rest.Config
-			kubeConfig, err := clientcmd.BuildConfigFromFlags("", path)
-			if err != nil {
-				return nil, diag.FromErr(err)
-			}
-			a.kubeConn.kubeConfig = kubeConfig
-
-			// Create Kubernetes *kubernetes.Clientset
-			kubeClient, err := kubernetes.NewForConfig(a.kubeConn.kubeConfig)
-			if err != nil {
-				return nil, diag.FromErr(err)
-			}
-			a.kubeConn.kubeClient = kubeClient
+			loader.ExplicitPath = path
 
 			if namespace := kubeConn[argNameSpace].(string); namespace != "" {
 				a.kubeConn.nameSpace = namespace
@@ -186,6 +205,37 @@ func configure(version string, p *schema.Provider) func(context.Context, *schema
 
 			a.kubeConn.localPort = kubeConn[argLocalPort].(string)
 			a.kubeConn.remotePort = kubeConn[argRemotePort].(string)
+
+			if v, ok := d.GetOk("exec"); ok {
+				exec := &clientcmdapi.ExecConfig{}
+				if spec, ok := v.([]interface{})[0].(map[string]interface{}); ok {
+					exec.APIVersion = spec["api_version"].(string)
+					exec.Command = spec["command"].(string)
+					exec.Args = expandStringSlice(spec["args"].([]interface{}))
+					for kk, vv := range spec["env"].(map[string]interface{}) {
+						exec.Env = append(exec.Env, clientcmdapi.ExecEnvVar{Name: kk, Value: vv.(string)})
+					}
+				} else {
+					return nil, diag.Errorf("Failed to parse exec")
+				}
+				overrides.AuthInfo.Exec = exec
+			}
+
+			cc := clientcmd.NewNonInteractiveDeferredLoadingClientConfig(loader, overrides)
+			cfg, err := cc.ClientConfig()
+			if err != nil {
+				log.Printf("[WARN] Invalid provider configuration was supplied. Provider operations likely to fail: %v", err)
+				return nil, nil
+			}
+
+			cfg.QPS = 100.0
+			cfg.Burst = 100
+			a.kubeConn.kubeConfig = cfg
+
+			a.kubeConn.kubeClient, err = kubernetes.NewForConfig(cfg)
+			if err != nil {
+				return nil, diag.FromErr(fmt.Errorf("failed to configure: %s", err))
+			}
 
 			a.url = fmt.Sprintf("http://localhost:%s", a.kubeConn.localPort)
 		} else {
@@ -230,4 +280,17 @@ func homeDir() (string, error) {
 		return h, nil
 	}
 	return "", fmt.Errorf("unable to get HOME directory")
+}
+
+func expandStringSlice(s []interface{}) []string {
+	result := make([]string, len(s), len(s))
+	for k, v := range s {
+		// Handle the Terraform parser bug which turns empty strings in lists to nil.
+		if v == nil {
+			result[k] = ""
+		} else {
+			result[k] = v.(string)
+		}
+	}
+	return result
 }

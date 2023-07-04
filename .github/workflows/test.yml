@@ -85,6 +85,5 @@ jobs:
           # optionally use data from your repository secrets using the
           # following syntax:
           # SOME_VAR: ${{ secrets.SOME_VAR }}
-
         run: |
           go test -v -cover ./internal/provider/
