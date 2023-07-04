@@ -56,6 +56,7 @@ jobs:
         vault:
           - "~1.7"
           - "~1.12"
+          - "~1.14"
     steps:
       - name: Set up Vault
         uses: eLco/setup-vault@v1
