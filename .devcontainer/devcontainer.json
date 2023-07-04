@@ -13,6 +13,9 @@
 		},
 		"ghcr.io/devcontainers-contrib/features/vault-asdf": {
 			"version": "1.14.0"
+		},
+		"ghcr.io/devcontainers/features/terraform": {
+			"version": "1.5.2"
 		}
 	},
 	"runArgs": [
