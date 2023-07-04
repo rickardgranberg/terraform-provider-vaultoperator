@@ -7,7 +7,6 @@ description: |-
 # vaultoperator Provider
 
 This Provider gives access to the `vault operator` operations, although currently only `vault operator init` is implemented.
-If you are using HTTPS with a self-signed or untrusted certificate, you can run `export VAULT_SKIP_VERIFY=true` and have the certificate verification errors ignored.
 
 **NOTE! This will put the root token and unseal/recovery keys into your state so use with caution!**
 
