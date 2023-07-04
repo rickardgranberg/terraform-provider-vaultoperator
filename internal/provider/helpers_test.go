@@ -1,16 +1,16 @@
 package provider
 
 import (
-	"regexp"
-	"testing"
-	"os/exec"
 	"bufio"
-	"io"
-	"path/filepath"
-	"net"
-	"fmt"
-	"strconv"
 	"bytes"
+	"fmt"
+	"io"
+	"net"
+	"os/exec"
+	"path/filepath"
+	"regexp"
+	"strconv"
+	"testing"
 )
 
 func startVault(t *testing.T) {
@@ -52,7 +52,7 @@ func startVault(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			t.Setenv("VAULT_ADDR", fmt.Sprintf("http://%s:%d", clusterHost, port - 1))
+			t.Setenv("VAULT_ADDR", fmt.Sprintf("http://%s:%d", clusterHost, port-1))
 		}
 
 		if vaultStarted.MatchString(scanner.Text()) {
