@@ -16,18 +16,20 @@ import (
 )
 
 const (
-	envVaultAddr      = "VAULT_ADDR"
-	provider          = "vaultoperator"
-	resInit           = provider + "_init"
-	argVaultUrl       = "vault_url"
-	argVaultAddr      = "vault_addr"
-	argRequestHeaders = "request_headers"
-	argKubeConfig     = "kube_config"
-	argKubeConfigPath = "path"
-	argNameSpace      = "namespace"
-	argServiceName    = "service"
-	argLocalPort      = "local_port"
-	argRemotePort     = "remote_port"
+	envVaultAddr       = "VAULT_ADDR"
+	envVaultSkipVerify = "VAULT_SKIP_VERIFY"
+	provider           = "vaultoperator"
+	resInit            = provider + "_init"
+	argVaultUrl        = "vault_url"
+	argVaultAddr       = "vault_addr"
+	argVaultSkipVerify = "vault_skip_verify"
+	argRequestHeaders  = "request_headers"
+	argKubeConfig      = "kube_config"
+	argKubeConfigPath  = "path"
+	argNameSpace       = "namespace"
+	argServiceName     = "service"
+	argLocalPort       = "local_port"
+	argRemotePort      = "remote_port"
 )
 
 func init() {
@@ -95,6 +97,12 @@ func providerSchema() map[string]*schema.Schema {
 			Type:        schema.TypeString,
 			Optional:    true,
 			Description: "Vault instance URL",
+		},
+		argVaultSkipVerify: {
+			Type:        schema.TypeBool,
+			Optional:    true,
+			DefaultFunc: schema.EnvDefaultFunc(envVaultSkipVerify, false),
+			Description: "Disable TLS certificate verification",
 		},
 		argRequestHeaders: {
 			Type:     schema.TypeMap,
@@ -252,7 +260,19 @@ func configure(version string, p *schema.Provider) func(context.Context, *schema
 			return nil, diag.Errorf("argument '%s' is required, or set VAULT_ADDR environment variable", argVaultUrl)
 		}
 
-		if c, err := api.NewClient(&api.Config{Address: a.url}); err != nil {
+		apiConfig := api.DefaultConfig()
+		apiConfig.Address = a.url
+
+		err := apiConfig.ConfigureTLS(&api.TLSConfig{
+			Insecure: d.Get(argVaultSkipVerify).(bool),
+		})
+
+		if err != nil {
+			logError("failed to configure Vault TLS: %v", err)
+			return nil, diag.FromErr(err)
+		}
+
+		if c, err := api.NewClient(apiConfig); err != nil {
 			logError("failed to create Vault API client: %v", err)
 			return nil, diag.FromErr(err)
 		} else {
