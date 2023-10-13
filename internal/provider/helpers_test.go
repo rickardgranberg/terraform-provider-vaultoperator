@@ -132,7 +132,7 @@ func startVault(t *testing.T, enableTLS bool) {
 
 	for scanner.Scan() {
 		if match := clusterAddress.FindStringSubmatch(scanner.Text()); match != nil {
-			clusterHost, clusterPort, err := net.SplitHostPort(match[1])
+			_, clusterPort, err := net.SplitHostPort(match[1])
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -142,7 +142,7 @@ func startVault(t *testing.T, enableTLS bool) {
 				t.Fatal(err)
 			}
 
-			t.Setenv("VAULT_ADDR", fmt.Sprintf("%s://%s:%d", protocol, clusterHost, port-1))
+			t.Setenv("VAULT_ADDR", fmt.Sprintf("%s://localhost:%d", protocol, port-1))
 		}
 
 		if vaultStarted.MatchString(scanner.Text()) {
