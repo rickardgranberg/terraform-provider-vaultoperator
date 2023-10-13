@@ -17,7 +17,7 @@ data "%[2]s" "test" {
 `, provider, resInit)
 
 func TestAccDataSourceInit(t *testing.T) {
-	startVault(t)
+	startVault(t, false)
 
 	resource.UnitTest(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
@@ -34,7 +34,7 @@ func TestAccDataSourceInit(t *testing.T) {
 }
 
 func TestAccDataSourceInitComplete(t *testing.T) {
-	startVault(t)
+	startVault(t, false)
 
 	resource.UnitTest(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },

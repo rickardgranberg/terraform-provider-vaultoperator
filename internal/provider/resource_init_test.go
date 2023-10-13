@@ -22,7 +22,7 @@ resource "%[2]s" "test" {
 `, provider, resInit)
 
 func TestAccResourceInit(t *testing.T) {
-	startVault(t)
+	startVault(t, false)
 
 	resource.UnitTest(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
@@ -115,7 +115,7 @@ resource "%[2]s" "test" {
 		publicKeys[5],
 	)
 
-	startVault(t)
+	startVault(t, false)
 
 	resource.UnitTest(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
