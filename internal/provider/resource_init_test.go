@@ -13,6 +13,7 @@ import (
 var testAccResourceInitVar = fmt.Sprintf("%[1]s.test", resInit)
 var testAccResourceInit = fmt.Sprintf(`
 provider "%[1]s" {
+    vault_skip_verify = true
 }
 
 resource "%[2]s" "test" {
@@ -22,7 +23,7 @@ resource "%[2]s" "test" {
 `, provider, resInit)
 
 func TestAccResourceInit(t *testing.T) {
-	startVault(t, false)
+	startVault(t, true)
 
 	resource.UnitTest(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
