@@ -50,6 +50,7 @@ provider "vaultoperator" {
 - `kube_config` (Block List) (see [below for nested schema](#nestedblock--kube_config))
 - `request_headers` (Map of String)
 - `vault_addr` (String) Vault instance URL
+- `vault_skip_verify` (Boolean) Disable TLS certificate verification
 - `vault_url` (String, Deprecated) Vault instance URL
 
 <a id="nestedblock--kube_config"></a>
